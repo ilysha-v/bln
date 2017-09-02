@@ -1,8 +1,9 @@
 package BlnService
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{HttpApp, Route}
 
-object Service extends HttpApp {
+class Service(implicit s: ActorSystem) extends HttpApp {
   import ApiJsonProtocol._
 
   val dataAccess = new DataAccess
@@ -12,15 +13,18 @@ object Service extends HttpApp {
       path("linkUserToCell") {
         post {
           formFields("ctn".as[Ctn], "cellId".as[CellId]) { (ctn, cellId) =>
-            dataAccess.linkWithCell(cellId, ctn)
-            complete("okay") // todo
+            onSuccess(dataAccess.linkWithCell(cellId, ctn)) {
+              complete("OK")
+            }
           }
         }
       } ~
       path("connectedUsers") {
         parameters("cellId".as[CellId]) { cellId =>
           rejectEmptyResponse {
-            complete(dataAccess.getCtns(cellId))
+            onSuccess(dataAccess.getCtns(cellId)) { r =>
+              complete(r)
+            }
           }
         }
       }

@@ -1,36 +1,45 @@
 package BlnService
 
-import ignite.scala.ComputeRunner
+import akka.actor.ActorSystem
 import org.apache.ignite.Ignition
 import org.apache.ignite.cache.CacheAtomicityMode
 import org.apache.ignite.configuration.{CacheConfiguration, IgniteConfiguration}
-import org.apache.ignite.marshaller.jdk.JdkMarshaller
 
-class DataAccess {
+import scala.concurrent.Future
+
+class DataAccess(implicit system: ActorSystem) {
   private val cfg = new IgniteConfiguration
-  cfg.setMarshaller(new JdkMarshaller)
-
   private val ignite = Ignition.start(cfg)
-  private implicit val runner = ComputeRunner(ignite.compute(ignite.cluster))
 
-  private val cellIdToCtn = {
+  implicit val executionContext = system.dispatchers.lookup("ignite-dispatcher")
+
+  private val cellIdToCtnCache = {
     val cfg = new CacheConfiguration[CellId, Set[Ctn]]
     cfg.setName("CellIdToCtn")
     cfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
     ignite.getOrCreateCache(cfg)
   }
+  private val userCache = {
+    val cfg = new CacheConfiguration[Ctn, User]
+    cfg.setName("User")
+    cfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL)
+    ignite.getOrCreateCache(cfg)
+  }
 
-  // todo make async
-  def getCtns(cell: CellId): Option[Set[Ctn]] = {
-    Option(cellIdToCtn.get(cell))
+  def getCtns(cell: CellId): Future[Option[Set[Ctn]]] = {
+    Future {
+      Option(cellIdToCtnCache.get(cell))
+    }
   }
 
   // todo по идее когда вяжем новый должны отвязать старый
-  def linkWithCell(cell: CellId, ctn: Ctn) = {
-    val l = cellIdToCtn.lock(cell)
-    l.lock()
-    val current = Option(cellIdToCtn.get(cell)).getOrElse(Set.empty)
-    cellIdToCtn.put(cell, current + ctn)
-    l.unlock()
+  def linkWithCell(cell: CellId, ctn: Ctn): Future[Unit] = {
+    Future {
+      val l = cellIdToCtnCache.lock(cell)
+      l.lock()
+      val current = Option(cellIdToCtnCache.get(cell)).getOrElse(Set.empty)
+      cellIdToCtnCache.put(cell, current + ctn)
+      l.unlock()
+    }
   }
 }

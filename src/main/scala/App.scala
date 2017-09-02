@@ -12,6 +12,6 @@ object App {
     implicit val ex: ExecutionContext = system.dispatcher
 
     val config = Configuration()
-    Service.startServer("0.0.0.0", config.serviceConfig.port)
+    new Service().startServer("0.0.0.0", config.serviceConfig.port)
   }
 }

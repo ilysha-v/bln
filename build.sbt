@@ -10,7 +10,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 libraryDependencies ++= Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.8.0",
 
-  "com.github.rubanm" %% "ignite-scala" % "0.0.1",
+  "org.apache.ignite" % "ignite-core" % "2.1.0",
 
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,

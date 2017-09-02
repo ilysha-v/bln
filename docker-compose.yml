@@ -2,7 +2,7 @@ version: '2.1'
 
 services:
   ignite:
-    image: apacheignite/ignite:1.0.0-incubating
+    image: apacheignite/ignite:2.1.0
     environment:
       CONFIG_URI: https://raw.githubusercontent.com/apache/ignite/master/examples/config/example-cache.xml
   backend:
