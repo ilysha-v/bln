@@ -1,10 +1,18 @@
-import BlnService.{AppConfig, Configuration}
+import BlnService.Configuration
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{HttpApp, Route}
 
 import scala.concurrent.ExecutionContext
+
+object Service extends HttpApp {
+  override protected def routes: Route =
+    path("api") {
+      get {
+        complete("OK")
+      }
+    }
+}
 
 object App {
   def main(args: Array[String]): Unit = {
@@ -13,15 +21,7 @@ object App {
 
     implicit val ex: ExecutionContext = system.dispatcher
 
-    val route =
-      path("api") {
-        get {
-          complete("OK")
-        }
-      }
-
     val config = Configuration()
-    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", config.serviceConfig.port) // todo onFailed
-    println("Server started")
+    Service.startServer("0.0.0.0", config.serviceConfig.port)
   }
 }
