@@ -26,19 +26,24 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
     ignite.getOrCreateCache(cfg)
   }
 
-  def getCtns(cell: CellId): Future[Option[Set[Ctn]]] = {
-    Future {
-      Option(cellIdToCtnCache.get(cell))
-    }
+  // todo do not override if user exists
+  def saveUser(user: User): Future[Boolean] = Future {
+    userCache.putIfAbsent(user.ctn, user)
+  }
+
+  def getCtns(cell: CellId): Future[Option[Set[Ctn]]] = Future {
+    Option(cellIdToCtnCache.get(cell))
   }
 
   // todo по идее когда вяжем новый должны отвязать старый
-  def linkWithCell(cell: CellId, ctn: Ctn): Future[Unit] = {
-    Future {
-      val l = cellIdToCtnCache.lock(cell)
-      l.lock()
+  def linkWithCell(cell: CellId, ctn: Ctn): Future[Unit] = Future {
+    val l = cellIdToCtnCache.lock(cell)
+    l.lock()
+    try {
       val current = Option(cellIdToCtnCache.get(cell)).getOrElse(Set.empty)
       cellIdToCtnCache.put(cell, current + ctn)
+    }
+    finally {
       l.unlock()
     }
   }

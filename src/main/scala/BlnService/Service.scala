@@ -1,6 +1,7 @@
 package BlnService
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{HttpApp, Route}
 
 class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
@@ -10,6 +11,16 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
 
   override protected def routes: Route =
     pathPrefix("api") {
+      path("user") {
+        post {
+          entity(as[User]) { user =>
+            onSuccess(dataAccess.saveUser(user)) { r =>
+              if (r) complete("ok")
+              else complete(StatusCodes.Conflict)
+            }
+          }
+        }
+      } ~
       path("linkUserToCell") {
         post {
           formFields("ctn".as[Ctn], "cellId".as[CellId]) { (ctn, cellId) =>
