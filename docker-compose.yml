@@ -1,0 +1,13 @@
+version: '2.1'
+
+services:
+  ignite:
+    image: apacheignite/ignite:1.0.0-incubating
+    environment:
+      CONFIG_URI: https://raw.githubusercontent.com/apache/ignite/master/examples/config/example-cache.xml
+  backend:
+    image: default/bln
+    expose: [ 8123 ]
+    ports:
+      - "127.0.0.1:8123:8123" # mac os docker limitations workaround
+    depends_on: [ ignite ]

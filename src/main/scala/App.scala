@@ -1,32 +1,8 @@
-import BlnService.Configuration
+import BlnService.{Configuration, Service}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.http.scaladsl.server.{HttpApp, Route}
 
 import scala.concurrent.ExecutionContext
-
-object Service extends HttpApp {
-  override protected def routes: Route =
-    path("api") {
-      path("linkUserToCell") {
-        post {
-          formFields("ctn".as[Long], "cellId".as[Long]) { (ctn, cellId) =>
-            complete("okay")
-          }
-        }
-      }
-      path("connectedUsers") {
-        get {
-          parameters("cellId".as[Long]) { cellId =>
-            complete(cellId.toString)
-          }
-        }
-      }
-      get {
-        complete("OK")
-      }
-    }
-}
 
 object App {
   def main(args: Array[String]): Unit = {

@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
 
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-  "com.typesafe.akka" %% "akka-http" % "10.0.10"
+  "com.typesafe.akka" %% "akka-http" % "10.0.10",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.9"
 )
 
 enablePlugins(DockerPlugin)
@@ -24,7 +25,7 @@ dockerfile in docker := {
   val artifactTargetPath = s"/app/${artifact.name}"
 
   new Dockerfile {
-    from("alpine")
+    from("anapsix/alpine-java")
     add(artifact, artifactTargetPath)
     entryPoint("java", "-jar", artifactTargetPath)
   }
