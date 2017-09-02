@@ -3,10 +3,10 @@ package BlnService
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{HttpApp, Route}
 
-class Service(implicit s: ActorSystem) extends HttpApp {
+class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
   import ApiJsonProtocol._
 
-  val dataAccess = new DataAccess
+  val dataAccess = new DataAccess(config.ignite)
 
   override protected def routes: Route =
     pathPrefix("api") {

@@ -7,12 +7,12 @@ import org.apache.ignite.configuration.{CacheConfiguration, IgniteConfiguration}
 
 import scala.concurrent.Future
 
-class DataAccess(implicit system: ActorSystem) {
-  private val cfg = new IgniteConfiguration
-  private val ignite = Ignition.start(cfg)
-
+class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   implicit val executionContext = system.dispatchers.lookup("ignite-dispatcher")
 
+  if (config.singleMode) Ignition.setClientMode(false)
+
+  private val ignite = Ignition.start(new IgniteConfiguration)
   private val cellIdToCtnCache = {
     val cfg = new CacheConfiguration[CellId, Set[Ctn]]
     cfg.setName("CellIdToCtn")

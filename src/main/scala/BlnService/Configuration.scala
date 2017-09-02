@@ -1,9 +1,8 @@
 package BlnService
 
-import com.typesafe.config.ConfigFactory
-
+case class IgniteConfig(singleMode: Boolean)
 case class ServiceConfig(port: Int)
-case class AppConfig(serviceConfig: ServiceConfig)
+case class AppConfig(service: ServiceConfig, ignite: IgniteConfig)
 
 object Configuration {
   def apply(): AppConfig = {

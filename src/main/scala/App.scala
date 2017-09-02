@@ -6,12 +6,12 @@ import scala.concurrent.ExecutionContext
 
 object App {
   def main(args: Array[String]): Unit = {
+    val config = Configuration()
+
     implicit val system = ActorSystem()
     implicit val materializer = ActorMaterializer() // todo нужен ли
 
     implicit val ex: ExecutionContext = system.dispatcher
-
-    val config = Configuration()
-    new Service().startServer("0.0.0.0", config.serviceConfig.port)
+    new Service(config).startServer("0.0.0.0", config.service.port)
   }
 }
