@@ -4,7 +4,7 @@ services:
   ignite:
     image: apacheignite/ignite:2.1.0
     environment:
-      CONFIG_URI: https://raw.githubusercontent.com/apache/ignite/master/examples/config/example-cache.xml
+      CONFIG_URI: https://raw.githubusercontent.com/ilysha-v/bln/master/src/main/resources/config.xml
   backend:
     image: default/bln
     expose: [ 8123 ]
