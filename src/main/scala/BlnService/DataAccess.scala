@@ -17,6 +17,10 @@ class SearchCellIdByCtnPredicate(ctn: Ctn) extends IgniteBiPredicate[CellId, Set
 class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   implicit val executionContext = system.dispatchers.lookup("ignite-dispatcher")
 
+  // Увы если брать конфиг из файла (который юзает сервер-нода)
+  // Ignite в рантайме требует спринг, а даже если ему его подсунуть, то
+  // он просто перестаёт отвечать на запросы, в том числе с дефолтным конфигом (т.е. тем, с которым работает, но
+  // без вычитывания файла). Такие дела.
   val cfg = new IgniteConfiguration()
   cfg.setPeerClassLoadingEnabled(true)
   cfg.setClientMode(!config.singleMode)

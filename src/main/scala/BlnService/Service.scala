@@ -10,12 +10,15 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
   val dataAccess = new DataAccess(config.ignite)
 
   override protected def routes: Route =
+    path("swagger-ui") {
+      getFromResource("swagger/index.html")
+    } ~ getFromResourceDirectory("swagger") ~
     pathPrefix("api") {
       path("user") {
         post {
           entity(as[User]) { user =>
             onSuccess(dataAccess.saveUser(user)) { r =>
-              if (r) complete("ok")
+              if (r) complete("OK")
               else complete(StatusCodes.Conflict)
             }
           }
@@ -40,10 +43,6 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
           }
         }
       } ~
-      path("swagger-ui") {
-        getFromResource("swagger/index.html")
-      } ~
-      getFromResourceDirectory("swagger") ~
       path("swagger") {
         getFromResource("swagger.yml")
       }
