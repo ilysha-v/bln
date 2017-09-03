@@ -24,8 +24,9 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
       path("linkUserToCell") {
         post {
           formFields("ctn".as[Ctn], "cellId".as[CellId]) { (ctn, cellId) =>
-            onSuccess(dataAccess.linkWithCell(cellId, ctn)) {
-              complete("OK")
+            onSuccess(dataAccess.linkWithCell(cellId, ctn)) { r =>
+              if (r) complete("OK")
+              else complete(StatusCodes.NotFound, "User not found")
             }
           }
         }
@@ -33,8 +34,8 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
       path("connectedUsers") {
         parameters("cellId".as[CellId]) { cellId =>
           rejectEmptyResponse {
-            onSuccess(dataAccess.getCtns(cellId)) { r =>
-              complete(r)
+            onSuccess(dataAccess.getUsersOnCell(cellId)) { r =>
+              complete(r.map(x => ServiceResponse(x.size, x)))
             }
           }
         }

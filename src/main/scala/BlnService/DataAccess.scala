@@ -26,7 +26,6 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
     ignite.getOrCreateCache(cfg)
   }
 
-  // todo do not override if user exists
   def saveUser(user: User): Future[Boolean] = Future {
     userCache.putIfAbsent(user.ctn, user)
   }
@@ -35,16 +34,27 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
     Option(cellIdToCtnCache.get(cell))
   }
 
+  def getUsersOnCell(cell: CellId): Future[Option[Set[User]]] = Future {
+    import scala.collection.JavaConversions._
+    for {
+      links <- Option(cellIdToCtnCache.get(cell))
+      users <- Option(userCache.getAll(links).values().toSet)
+    } yield users
+  }
+
   // todo по идее когда вяжем новый должны отвязать старый
-  def linkWithCell(cell: CellId, ctn: Ctn): Future[Unit] = Future {
-    val l = cellIdToCtnCache.lock(cell)
-    l.lock()
-    try {
-      val current = Option(cellIdToCtnCache.get(cell)).getOrElse(Set.empty)
-      cellIdToCtnCache.put(cell, current + ctn)
-    }
-    finally {
-      l.unlock()
+  def linkWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
+    Option(userCache.get(ctn)).fold(false) { _ =>
+      val l = cellIdToCtnCache.lock(cell)
+      l.lock()
+      try {
+        val current = Option(cellIdToCtnCache.get(cell)).getOrElse(Set.empty)
+        cellIdToCtnCache.put(cell, current + ctn)
+        true
+      }
+      finally {
+        l.unlock()
+      }
     }
   }
 }
