@@ -10,13 +10,18 @@ import org.apache.ignite.lang.IgniteBiPredicate
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+class SearchCellIdByCtnPredicate(ctn: Ctn) extends IgniteBiPredicate[CellId, Set[Ctn]] {
+  override def apply(e1: CellId, e2: Set[Ctn]) = e2.contains(ctn)
+}
+
 class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   implicit val executionContext = system.dispatchers.lookup("ignite-dispatcher")
 
-//  val cfg = new IgniteConfiguration()
-//  if (config.singleMode) cfg.setClientMode(false)
+  val cfg = new IgniteConfiguration()
+  cfg.setPeerClassLoadingEnabled(true)
+  cfg.setClientMode(!config.singleMode)
 
-  private val ignite = Ignition.start()
+  private val ignite = Ignition.start(cfg)
   private val cellIdToCtnCache = {
     val cfg = new CacheConfiguration[CellId, Set[Ctn]]
     cfg.setName("CellIdToCtn")
@@ -52,9 +57,7 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   def linkCtnWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
     import collection.JavaConverters._
 
-    val oldCellQuery = new ScanQuery(new IgniteBiPredicate[CellId, Set[Ctn]]() {
-      override def apply(e1: CellId, e2: Set[Ctn]) = e2.contains(ctn)
-    })
+    val oldCellQuery = new ScanQuery(new SearchCellIdByCtnPredicate(ctn))
 
     withTransaction {
       // remove old links
