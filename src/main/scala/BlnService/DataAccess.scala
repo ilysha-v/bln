@@ -40,10 +40,12 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   def getUsersOnCell(cell: CellId): Future[Option[Set[User]]] = Future {
     import scala.collection.JavaConversions._
 
-    for { // todo тут есть риск рассинхрона между двумя кешами, посмотреть в стороную sql join'a
-      links <- Option(cellIdToCtnCache.get(cell))
-      users <- Option(userCache.getAll(links).values().toSet)
-    } yield users
+    withTransaction {
+      for {
+        links <- Option(cellIdToCtnCache.get(cell))
+        users <- Option(userCache.getAll(links).values().toSet)
+      } yield users
+    }
   }
 
   def linkCtnWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
