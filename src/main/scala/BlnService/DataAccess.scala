@@ -13,9 +13,10 @@ import scala.util.control.NonFatal
 class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   implicit val executionContext = system.dispatchers.lookup("ignite-dispatcher")
 
-  if (config.singleMode) Ignition.setClientMode(false)
+//  val cfg = new IgniteConfiguration()
+//  if (config.singleMode) cfg.setClientMode(false)
 
-  private val ignite = Ignition.start(new IgniteConfiguration)
+  private val ignite = Ignition.start()
   private val cellIdToCtnCache = {
     val cfg = new CacheConfiguration[CellId, Set[Ctn]]
     cfg.setName("CellIdToCtn")
