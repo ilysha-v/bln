@@ -1,13 +1,14 @@
 package BlnService
 
-import java.util.concurrent.locks.Lock
-
 import akka.actor.ActorSystem
 import org.apache.ignite.Ignition
 import org.apache.ignite.cache.CacheAtomicityMode
+import org.apache.ignite.cache.query.ScanQuery
 import org.apache.ignite.configuration.{CacheConfiguration, IgniteConfiguration}
+import org.apache.ignite.lang.IgniteBiPredicate
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   implicit val executionContext = system.dispatchers.lookup("ignite-dispatcher")
@@ -38,16 +39,29 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
 
   def getUsersOnCell(cell: CellId): Future[Option[Set[User]]] = Future {
     import scala.collection.JavaConversions._
-    for { // todo тут есть риск рассинхрона между двумя бд, посмотреть в стороную sql join'a
+
+    for { // todo тут есть риск рассинхрона между двумя кешами, посмотреть в стороную sql join'a
       links <- Option(cellIdToCtnCache.get(cell))
       users <- Option(userCache.getAll(links).values().toSet)
     } yield users
   }
 
-  // todo по идее когда вяжем новый должны отвязать старый
   def linkCtnWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
-    Option(userCache.get(ctn)).fold(false) { _ =>
-      loadPattern(cellIdToCtnCache.lock(cell)) {
+    import collection.JavaConverters._
+
+    val oldCellQuery = new ScanQuery(new IgniteBiPredicate[CellId, Set[Ctn]]() {
+      override def apply(e1: CellId, e2: Set[Ctn]) = e2.contains(ctn)
+    })
+
+    withTransaction {
+      // remove old links
+      val oldLinks = cellIdToCtnCache.query(oldCellQuery).getAll.asScala
+      assert(oldLinks.size < 2, s"Inconsistent data detected! $ctn linked with more than one cell")
+      oldLinks.headOption.fold({}) { entry =>
+        cellIdToCtnCache.put(entry.getKey, entry.getValue - ctn)
+      }
+
+      Option(userCache.get(ctn)).fold(false) { _ =>
         val current = Option(cellIdToCtnCache.get(cell)).getOrElse(Set.empty)
         cellIdToCtnCache.put(cell, current + ctn)
         true
@@ -55,13 +69,17 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
     }
   }
 
-  private def loadPattern[A](l: Lock)(f: => A) = {
-    l.lock()
+  private def withTransaction[A](f: => A) = {
+    val tx = ignite.transactions().txStart()
     try {
-      f
+      val result = f
+      tx.commit()
+      result
     }
-    finally {
-      l.unlock()
+    catch {
+      case NonFatal(e) =>
+        tx.rollback()
+        throw e
     }
   }
 }
