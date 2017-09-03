@@ -1,5 +1,7 @@
 package BlnService
 
+import java.util.concurrent.locks.Lock
+
 import akka.actor.ActorSystem
 import org.apache.ignite.Ignition
 import org.apache.ignite.cache.CacheAtomicityMode
@@ -36,7 +38,7 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
 
   def getUsersOnCell(cell: CellId): Future[Option[Set[User]]] = Future {
     import scala.collection.JavaConversions._
-    for {
+    for { // todo тут есть риск рассинхрона между двумя бд, посмотреть в стороную sql join'a
       links <- Option(cellIdToCtnCache.get(cell))
       users <- Option(userCache.getAll(links).values().toSet)
     } yield users
@@ -45,16 +47,21 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   // todo по идее когда вяжем новый должны отвязать старый
   def linkCtnWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
     Option(userCache.get(ctn)).fold(false) { _ =>
-      val l = cellIdToCtnCache.lock(cell)
-      l.lock()
-      try {
+      loadPattern(cellIdToCtnCache.lock(cell)) {
         val current = Option(cellIdToCtnCache.get(cell)).getOrElse(Set.empty)
         cellIdToCtnCache.put(cell, current + ctn)
         true
       }
-      finally {
-        l.unlock()
-      }
+    }
+  }
+
+  private def loadPattern[A](l: Lock)(f: => A) = {
+    l.lock()
+    try {
+      f
+    }
+    finally {
+      l.unlock()
     }
   }
 }
