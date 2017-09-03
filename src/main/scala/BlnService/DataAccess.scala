@@ -43,7 +43,7 @@ class DataAccess(config: IgniteConfig)(implicit system: ActorSystem) {
   }
 
   // todo по идее когда вяжем новый должны отвязать старый
-  def linkWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
+  def linkCtnWithCell(cell: CellId, ctn: Ctn): Future[Boolean] = Future {
     Option(userCache.get(ctn)).fold(false) { _ =>
       val l = cellIdToCtnCache.lock(cell)
       l.lock()

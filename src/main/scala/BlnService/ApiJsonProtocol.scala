@@ -19,6 +19,7 @@ trait ApiJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
   implicit val cellIdFormat = LongAnyValFormat[CellId](CellId, _.value)
   implicit val ctnFormat = LongAnyValFormat[Ctn](Ctn, _.value)
+  implicit val linkFormat = jsonFormat2(CtnWithCellLink)
   implicit val instantFormat = new RootJsonFormat[Date] {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     override def write(obj: Date) = format.format(obj).toJson

@@ -1,0 +1,86 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Bln service"
+host: "localhost:8123"
+schemes:
+- "http"
+paths:
+  /api/user:
+    post:
+      summary: "Create new user"
+      consumes:
+      - "application/json"
+      produces:
+      - "text/plain"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "User object"
+        required: true
+        schema:
+          $ref: "#/definitions/User"
+      responses:
+        409:
+          description: "User with thar ctn already exists"
+  /api/linkUserToCell:
+    post:
+      summary: "Link user with cell"
+      consumes:
+      - "application/json"
+      produces:
+      - "text/plain"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "User object"
+        required: true
+        schema:
+          $ref: "#/definitions/CtnToCellLink"
+      responses:
+        404:
+          description: "User was not found"
+  /api/connectedUsers?cellId={cellId}:
+    get:
+      summary: "Get users, connected with passed cell"
+      parameters:
+        - in: path
+          name: cellId
+          schema:
+            type: integer
+          required: true
+          description: "Id of cell"
+      responses:
+        404:
+          description: "Cell was not found"
+definitions:
+  User:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      activateDate:
+        type: "string"
+        format: "date"
+        example: "2017-02-24 12:45:00"
+      ctn:
+        type: "integer"
+  CtnToCellLink:
+    type: "object"
+    properties:
+      ctn:
+        type: "integer"
+      cellId:
+        type: "integer"
+  ApiResponse:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      type:
+        type: "string"
+      message:
+          type: "string"

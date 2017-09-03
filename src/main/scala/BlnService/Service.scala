@@ -23,8 +23,8 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
       } ~
       path("linkUserToCell") {
         post {
-          formFields("ctn".as[Ctn], "cellId".as[CellId]) { (ctn, cellId) =>
-            onSuccess(dataAccess.linkWithCell(cellId, ctn)) { r =>
+          entity(as[CtnWithCellLink]) { link =>
+            onSuccess(dataAccess.linkCtnWithCell(link.cellId, link.ctn)) { r =>
               if (r) complete("OK")
               else complete(StatusCodes.NotFound, "User not found")
             }
@@ -39,6 +39,13 @@ class Service(config: AppConfig)(implicit s: ActorSystem) extends HttpApp {
             }
           }
         }
+      } ~
+      path("swagger-ui") {
+        getFromResource("swagger/index.html")
+      } ~
+      getFromResourceDirectory("swagger") ~
+      path("swagger") {
+        getFromResource("swagger.yml")
       }
     }
 }
