@@ -5,6 +5,9 @@ services:
     image: apacheignite/ignite:2.1.0
     environment:
       CONFIG_URI: https://raw.githubusercontent.com/ilysha-v/bln/master/src/main/resources/config.xml
+      JVM_OPTS: >-
+        -XX:+UseG1GC
+        -XX:+DisableExplicitGC
   backend:
     image: default/bln
     expose: [ 8123 ]
